@@ -21,22 +21,22 @@ for line in sys.stdin:
         # TODO récupérer l'url du site
         # TODO skip si l'url est dans l'ignore extension list
 
-        if Analyzer.isUrlLine(line):
+        if Analyzer.is_url_line(line):
             # Url found
-            url = Analyzer.extractUrl(line)
-            if IgnoreContent.isIgnoreUrl(url):
+            url = Analyzer.extract_url(line)
+            if IgnoreContent.is_ignored_url(url):
                 # On rentre en mode skip
                 SKIP_CONTENT = True
 
         # Phase de transition
-        if Analyzer.isContentLine(line):
+        if Analyzer.is_content_line(line):
             HEADER = False
             contentHtml += line  # En supposant qu'une content line est un <doctype ...>
 
     elif CONTENT and not SKIP_CONTENT:
         # Dans le CONTENT :
-        if not Analyzer.isContentEnd(
-                line):  # TODO contentEnd peut être </html> du coup il faut rajouter à contentHtml dans le else
+        if not Analyzer.is_content_end(line):
+            # TODO contentEnd peut être </html> du coup il faut rajouter à contentHtml dans le else
             # On ajoute les lignes pour le parseur  après
             contentHtml += line
         else:
@@ -56,7 +56,7 @@ for line in sys.stdin:
             HEADER = True
     else:
         # Dans le cas ou on est en mode SKIP_CONTENT
-        if Analyzer.isContentEnd(line):
+        if Analyzer.is_content_end(line):
             # On revient à la normal en rentrant dans un HEADER
             CONTENT = False
             SKIP_CONTENT = False
