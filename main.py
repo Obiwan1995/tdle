@@ -3,21 +3,21 @@
 
 import os
 
-def callScriptWithFile(scriptPath,fileName):
-    if (os.name == "nt"):
+
+def call_script_with_file(script_path, filename):
+    if os.name == "nt":
         # Windows mode
-        os.system("python "+scriptPath+" < data/"+fileName)
+        os.system("python " + script_path + " < data/" + filename)
 
     else:
         # Other
-        os.system("cat data/"+fileName+" | python3 "+scriptPath)
+        os.system("cat data/" + filename + " | python3 " + script_path)
+
 
 def main():
     print("Hello word")
 
-    callScriptWithFile("other/map_wordcount.py","test.txt")
-
-
+    call_script_with_file("other/map_wordcount.py", "test.txt")
 
 
 if __name__ == '__main__':

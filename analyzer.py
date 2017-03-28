@@ -5,22 +5,21 @@
 class Analyzer:
 
     @staticmethod
-    def isUrlLine(line):
+    def is_url_line(line):
         # TODO
         return False
 
     @staticmethod
-    def isContentLine(line):
+    def is_content_line(line):
         # TODO
         return False
 
     @staticmethod
-    def isContentEnd(line):
+    def is_content_end(line):
         # TODO
         return False
 
     @staticmethod
-    def extractUrl(line):
+    def extract_url(line):
         # TODO
         return ""
-

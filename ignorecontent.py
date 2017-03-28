@@ -2,11 +2,9 @@
 # !/usr/bin/python3
 
 
-
-class IgnoreContent :
-
+class IgnoreContent:
 
     @staticmethod
-    def isIgnoreUrl(url):
+    def is_ignored_url(url):
         # TODO
         return False
