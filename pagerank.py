@@ -24,8 +24,8 @@ M = [[0, 1, 1, 0, 0, 0, 0, 0],
 
 
 # initially, page rank of each page is 1/npages
-PR = [1.0 / npages] * npages;
-C = [0] * npages;
+PR = [1.0 / npages] * npages
+C = [0] * npages
 recv = [0] * npages
 d = 0.85
 # number of iterations
