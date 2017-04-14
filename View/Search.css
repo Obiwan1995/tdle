@@ -1,0 +1,37 @@
+body{
+
+}
+
+div.well{
+  height: 250px;
+} 
+
+.Absolute-Center {
+  margin: auto;
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+}
+
+.Absolute-Center.is-Responsive {
+  width: 50%; 
+  height: 50%;
+  min-width: 800px;
+  max-width: 1200px;
+  padding: 120px;
+}
+
+#logo-container{
+  margin: auto;
+  margin-bottom: 10px;
+  width:200px;
+  height:30px;
+}
+.img{
+  margin-left: 12%
+}
+.searchbar{
+  margin-top: 3%;
+}
+.buttonsearch{
+  margin-top: 3%
+}
