@@ -1,10 +1,10 @@
 import time
-import sqlReader
+from .sql_reader import SqlReader
 
 current_milli_time = lambda: int(round(time.time() * 1000))
 
 
-class pageIdTitleMap:
+class PageIdTitleMap:
     PRINT_INTERVAL = 30
 
     @staticmethod
@@ -12,8 +12,8 @@ class pageIdTitleMap:
         start_time = int(round(time.time() * 1000))
         result = dict()
         with open(file, 'r') as f:
-            inp = sqlReader(f, "page")
-            last_print = current_milli_time() + pageIdTitleMap.PRINT_INTERVAL
+            inp = SqlReader(f, "page")
+            last_print = current_milli_time() + PageIdTitleMap.PRINT_INTERVAL
             try:
                 while True:
                     multiple_rows = inp.read_insertion_tuples()
@@ -39,7 +39,7 @@ class pageIdTitleMap:
 
                         result[title] = idn
 
-                    if int(round(time.time() * 1000)) - last_print >= pageIdTitleMap.PRINT_INTERVAL:
+                    if int(round(time.time() * 1000)) - last_print >= PageIdTitleMap.PRINT_INTERVAL:
                         print("Parsing {}: {} million entries stored...".format(file, len(result) / 1000000))
                         last_print = current_milli_time()
             except Exception as e:
@@ -54,7 +54,7 @@ class pageIdTitleMap:
         result = dict()
         with open(file) as inp:
             try:
-                last_print = current_milli_time() - pageIdTitleMap.PRINT_INTERVAL
+                last_print = current_milli_time() - PageIdTitleMap.PRINT_INTERVAL
                 i = 0
                 while True:
                     line = inp.readline()
@@ -62,7 +62,7 @@ class pageIdTitleMap:
                         break
                     result[line] = int(inp.readline())
 
-                    if current_milli_time() - last_print >= pageIdTitleMap.PRINT_INTERVAL:
+                    if current_milli_time() - last_print >= PageIdTitleMap.PRINT_INTERVAL:
                         print("Reading {}: {} million entries...".format(file, i / 1000000))
                         last_print = current_milli_time()
 
@@ -78,13 +78,13 @@ class pageIdTitleMap:
         with open(file, 'w') as out:
             try:
                 i = 0
-                last_print = current_milli_time() - pageIdTitleMap.PRINT_INTERVAL
+                last_print = current_milli_time() - PageIdTitleMap.PRINT_INTERVAL
                 for title in id_by_title.keys():
                     out.write(title)
                     out.write(id_by_title[title])
                     i += 1
 
-                if current_milli_time() - last_print >= pageIdTitleMap.PRINT_INTERVAL:
+                if current_milli_time() - last_print >= PageIdTitleMap.PRINT_INTERVAL:
                     print("Writing {}: {} million entries...".format(file, i / 1000000))
                     last_print = current_milli_time()
 

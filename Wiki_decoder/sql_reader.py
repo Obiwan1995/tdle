@@ -1,5 +1,5 @@
 
-class sqlReader:
+class SqlReader:
     def __init__(self, inp, table_name):
         self.input = inp
         self.matchLinePrefix = "INSERT INTO `" + table_name + "` VALUES"
