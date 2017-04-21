@@ -14,7 +14,8 @@ class ParseWiki:
     # ---- Main program ----
 
     @staticmethod
-    def main(args):
+    def main():
+        # def main(args):
 
         if not os.path.exists(ParseWiki.PAGE_ID_TITLE_RAW_FILE):
             title_to_id = PageIdTitleMap.read_sql_file(ParseWiki.PAGE_ID_TITLE_SQL_FILE)
@@ -32,3 +33,7 @@ class ParseWiki:
             links = PageLinksList.read_raw_file(ParseWiki.PAGE_LINKS_RAW_FILE)
 
         print("* Done indexing.")
+
+
+if __name__ == '__main__':
+    ParseWiki.main()
