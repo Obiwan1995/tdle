@@ -1,147 +1,149 @@
-from sys import *
-import os.path
 import time
 import struct
+from .sql_reader import SqlReader
 
-class PageLinksList():
-	
-	PRINT_INTERVAL = 30  #In milliseconds
-	current_milli_time = lambda: int(round(time.time() * 1000))
-	MAX_INT = 9223372036854775807
-	@staticmethod
-	def readSqlFile(file, titleToId, idToTitle):
-		
-		startTime = int(round(time.time() * 1000))
-		rawlinks = [1]
-		rawlinksLen = 0		
-		inp = SqlReader(file, "pagelinks")
-		
-		try : 
-		
-			lastPrint = PageLinksList.current_milli_time() - PageLinksList.PRINT_INTERVAL
-			while True :	
-				multipleRows = inp.readInsertionTuples()
-				
-				if multipleRows is None:
-					break
-					
-				for tuple in multipleRows :
-					#Get tuple fields
-					if len(tuple) != 4:
-						raise Exception("Incorrect number of columns")
-					srcId = tuple[0]
-					namespace = tuple[1]
-					destTitle = tuple[2]
-					
-					#Check data format
-					if not isinstance(srcId, int):
-						raise Exception("Source ID must be integer")
-					if not isinstance(namespace, int):
-						raise Exception("Namespace must be integer")
-					if not isinstance(destTitle, int):
-						raise Exception("Destination title must be integer")
-					if int(namespace) == 0 and (srcId in idToTitle) and (destTitle in titleToId):
-						continue  #Skip if not in main namespace or either page entry not found
-					
-					#Append to dynamic array
-					if rawlinksLen == len(rawlinks):
-						if rawlinksLen >= PageLinksList.MAX_INT / 2:
-							raise Exception("Array size too large")
-						#rawlinks = Arrays.copyOf(rawlinks, rawlinks.length * 2) --> inutil de le traduire 
-					
-					rawlinks[rawlinksLen] = titleToId[destTitle] << 32 | int(srcId)
-					rawlinksLen+=1
-					
-				if PageLinksList.current_milli_time() - lastPrint >= PageLinksList.PRINT_INTERVAL :
-					print("\rParsing {}: {} million entries stored".format(file, rawlinksLen / 1000000.0))
-					lastPrint = PageLinksList.current_milli_time()
-				
-		except Exception:
-			print("Error")
-		
-		print("\rParsing {}: {} million entries stored. Done ({} s)".format(file, rawlinksLen / 1000000.0, (PageLinksList.current_milli_time() - startTime) / 1000.0))
-		
-		return postprocessLinks(rawlinks, rawlinksLen)
 
-	@staticmethod
-	def postprocessLinks(rawlinks, rawlinksLen):
-		
-		print("Postprocessing links...")
-		startTime = PageLinksList.current_milli_time()
-		rawlinks.sort()
-		
-		links = [1]
-		linksLen = 0
-		
-		for i in range(0, rawlinksLen) :
-			dest = int(rawlinks[i] >> 32)
-			j = i + 1
-			while j < rawlinksLen and int((rawlinks[j] >> 32)) == dest :
-				j+=1
-				
-			while linksLen + j - i + 2 >= len(links) :
-				if linksLen >=  PageLinksList.MAX_INT / 2 :
-					raise Exception("Array size too large")
-				#links = Arrays.copyOf(links, links.length * 2) --> inutil de le traduire 
-			
-			linksLen+=1
-			links[linksLen] = dest
-			linksLen+=1
-			links[linksLen] = j - i
-			while i < j :
-				linksLen+=1
-				links[linksLen] = int(rawlinks[i])
-				i+=1
-		System.out.printf(" Done ({} s)".format((PageLinksList.current_milli_time()  - startTime) / 1000.0))
-		return links
-		
-	@staticmethod
-	def readRawFile(file) :
-		startTime = PageLinksList.current_milli_time()
-		result =[]
-		inp = DataInputStream(open(file))
-		try :
-			lastPrint = PageLinksList.current_milli_time() - PageLinksList.PRINT_INTERVAL
-			result = [inp.read_int()]
-			for i in range(0, len(result)):
-			
-				result[i] = inp.read_int()
-				
-				if PageLinksList.current_milli_time() - lastPrint >= PageLinksList.PRINT_INTERVAL:
-					print("\rReading {}: {} of {} million raw items...".format(file, i / 1000000.0, len(result) / 1000000.0))
-					lastPrint = PageLinksList.current_milli_time()
-				
-			
-			print("\rReading {}: {} of {} million raw items... Done ({} s)".format(file, len(result) / 1000000.0, len(result) / 1000000.0, (PageLinksList.current_milli_time() - startTime) / 1000.0))
-				
-		except Exception:
-			print("Error")
-		
-		return result
+class PageLinksList:
+    PRINT_INTERVAL = 30  # In milliseconds
+    current_milli_time = lambda: int(round(time.time() * 1000))
+    MAX_INT = 9223372036854775807
 
-		
-	@staticmethod
-	def writeRawFile(links, file):
-		startTime = PageLinksList.current_milli_time()
-		out = open(file)
-		try :
-			out.write(struct.pack("i",links.length))
-			i = 0
-			lastPrint = PageLinksList.current_milli_time() - PRINT_INTERVAL
-			for link in links :
-				out.write(struct.pack("i",links))
-				i+=1
-				
-				if PageLinksList.current_milli_time()- lastPrint >= PageLinksList.PRINT_INTERVAL :
-					print("\rWriting {}: {} of {} million raw items...".format(file, i / 1000000.0, len(links) / 1000000.0))
-					lastPrint = PageLinksList.current_milli_time()
-				
-			
-			print("\rWriting {}: {} of {} million raw items... Done ({} s)%n".format(file, i / 1000000.0, len(links) / 1000000.0, (PageLinksList.current_milli_time() - startTime) / 1000.0))
-		except Exception:
-			print("Error")
-	
-		
+    @staticmethod
+    def read_sql_file(file, title_to_id, id_to_title):
+
+        start_time = int(round(time.time() * 1000))
+        raw_links = [1]
+        raw_links_len = 0
+        inp = SqlReader(file, "pagelinks")
+
+        try:
+            last_print = PageLinksList.current_milli_time() - PageLinksList.PRINT_INTERVAL
+            while True:
+                multiple_rows = inp.read_insertion_tuples()
+
+                if multiple_rows is None:
+                    break
+
+                for tup in multiple_rows:
+                    # Get tup fields
+                    if len(tup) != 4:
+                        raise Exception("Incorrect number of columns")
+                    src_id = tup[0]
+                    namespace = tup[1]
+                    dest_title = tup[2]
+
+                    # Check data format
+                    if not isinstance(src_id, int):
+                        raise Exception("Source ID must be integer")
+                    if not isinstance(namespace, int):
+                        raise Exception("Namespace must be integer")
+                    if not isinstance(dest_title, int):
+                        raise Exception("Destination title must be integer")
+                    if int(namespace) == 0 and (src_id in id_to_title) and (dest_title in title_to_id):
+                        continue  # Skip if not in main namespace or either page entry not found
+
+                    # Append to dynamic array
+                    if raw_links_len == len(raw_links):
+                        if raw_links_len >= PageLinksList.MAX_INT / 2:
+                            raise Exception("Array size too large")
+                            # raw_links = Arrays.copyOf(raw_links, raw_links.length * 2) --> inutile de le traduire
+
+                    raw_links[raw_links_len] = title_to_id[dest_title] << 32 | int(src_id)
+                    raw_links_len += 1
+
+                if PageLinksList.current_milli_time() - last_print >= PageLinksList.PRINT_INTERVAL:
+                    print("\rParsing {}: {} million entries stored".format(file, raw_links_len / 1000000.0))
+                    last_print = PageLinksList.current_milli_time()
+
+        except Exception as e:
+            print(e)
+
+        print("\rParsing {}: {} million entries stored. Done ({} s)".format(file, raw_links_len / 1000000.0, (
+        PageLinksList.current_milli_time() - start_time) / 1000.0))
+
+        return PageLinksList.post_process_links(raw_links, raw_links_len)
+
+    @staticmethod
+    def post_process_links(raw_links, raw_links_len):
+
+        print("Postprocessing links...")
+        start_time = PageLinksList.current_milli_time()
+        raw_links.sort()
+
+        links = [1]
+        links_len = 0
+
+        for i in range(0, raw_links_len):
+            dest = int(raw_links[i] >> 32)
+            j = i + 1
+            while j < raw_links_len and int((raw_links[j] >> 32)) == dest:
+                j += 1
+
+            while links_len + j - i + 2 >= len(links):
+                if links_len >= PageLinksList.MAX_INT / 2:
+                    raise Exception("Array size too large")
+                    # links = Arrays.copyOf(links, links.length * 2) --> inutile de le traduire
+
+            links_len += 1
+            links[links_len] = dest
+            links_len += 1
+            links[links_len] = j - i
+            while i < j:
+                links_len += 1
+                links[links_len] = int(raw_links[i])
+                i += 1
+        print(" Done ({} s)".format((PageLinksList.current_milli_time() - start_time) / 1000.0))
+        return links
+
+    @staticmethod
+    def read_raw_file(file):
+        start_time = PageLinksList.current_milli_time()
+        result = []
+        inp = DataInputStream(open(file))
+        try:
+            last_print = PageLinksList.current_milli_time() - PageLinksList.PRINT_INTERVAL
+            result = [inp.read_int()]
+            for i in range(0, len(result)):
+
+                result[i] = inp.read_int()
+
+                if PageLinksList.current_milli_time() - last_print >= PageLinksList.PRINT_INTERVAL:
+                    print("\rReading {}: {} of {} million raw items...".format(file, i / 1000000.0,
+                                                                               len(result) / 1000000.0))
+                    last_print = PageLinksList.current_milli_time()
+
+            print("\rReading {}: {} of {} million raw items... Done ({} s)".format(file, len(result) / 1000000.0,
+                                                                                   len(result) / 1000000.0, (
+                                                                                       PageLinksList.current_milli_time() - start_time) / 1000.0))
+
+        except Exception as e:
+            print(e)
+
+        return result
+
+    @staticmethod
+    def write_raw_file(links, file):
+        start_time = PageLinksList.current_milli_time()
+        out = open(file)
+        try:
+            out.write(struct.pack("i", links.length))
+            i = 0
+            last_print = PageLinksList.current_milli_time() - PageLinksList.PRINT_INTERVAL
+            for link in links:
+                out.write(struct.pack("i", link))
+                i += 1
+
+                if PageLinksList.current_milli_time() - last_print >= PageLinksList.PRINT_INTERVAL:
+                    print("\rWriting {}: {} of {} million raw items...".format(file, i / 1000000.0,
+                                                                               len(links) / 1000000.0))
+                    last_print = PageLinksList.current_milli_time()
+
+            print("\rWriting {}: {} of {} million raw items... Done ({} s)%n".format(file, i / 1000000.0,
+                                                                                     len(links) / 1000000.0, (
+                                                                                         PageLinksList.current_milli_time() - start_time) / 1000.0))
+        except Exception as e:
+            print(e)
+
 
 class DataInputStream:
     def __init__(self, stream):
