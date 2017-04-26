@@ -44,7 +44,7 @@ class PageLinksList:
 
                     # Append to dynamic array
                     if raw_links_len == len(raw_links):
-                        if raw_links_len >= PageLinksList.MAX_INT / 2:
+                        if raw_links_len >= int(PageLinksList.MAX_INT / 2):
                             raise Exception("Array size too large")
                             # raw_links = Arrays.copyOf(raw_links, raw_links.length * 2) --> inutile de le traduire
 
@@ -80,7 +80,7 @@ class PageLinksList:
                 j += 1
 
             while links_len + j - i + 2 >= len(links):
-                if links_len >= PageLinksList.MAX_INT / 2:
+                if links_len >= int(PageLinksList.MAX_INT / 2):
                     raise Exception("Array size too large")
                     # links = Arrays.copyOf(links, links.length * 2) --> inutile de le traduire
 
