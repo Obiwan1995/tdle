@@ -1,7 +1,11 @@
 import os.path
-from .page_id_title_map import PageIdTitleMap
-from .page_links_list import PageLinksList
+from page_id_title_map import PageIdTitleMap
+from page_links_list import PageLinksList
+import sys
+from pathlib import Path # if you haven't already done so
+root = str(Path(__file__).resolve().parents[1])
 
+sys.path.append(root)
 
 class ParseWiki:
     PAGE_ID_TITLE_SQL_FILE = "frwiki-latest-page.sql.gz"  # Original input file

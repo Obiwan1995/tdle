@@ -1,5 +1,6 @@
 import time
-from .sql_reader import SqlReader
+import gzip
+from sql_reader import SqlReader
 
 current_milli_time = lambda: int(round(time.time() * 1000))
 
@@ -11,7 +12,7 @@ class PageIdTitleMap:
     def read_sql_file(file):
         start_time = int(round(time.time() * 1000))
         result = dict()
-        with open(file, 'r') as f:
+        with gzip.open(file, 'rt') as f:
             inp = SqlReader(f, "page")
             last_print = current_milli_time() + PageIdTitleMap.PRINT_INTERVAL
             try:
@@ -80,8 +81,8 @@ class PageIdTitleMap:
                 i = 0
                 last_print = current_milli_time() - PageIdTitleMap.PRINT_INTERVAL
                 for title in id_by_title.keys():
-                    out.write(title)
-                    out.write(id_by_title[title])
+                    out.write(title + "\n")
+                    out.write(str(id_by_title[title]) + "\n")
                     i += 1
 
                 if current_milli_time() - last_print >= PageIdTitleMap.PRINT_INTERVAL:

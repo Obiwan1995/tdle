@@ -1,6 +1,6 @@
 import time
 import struct
-from .sql_reader import SqlReader
+from sql_reader import SqlReader
 
 
 class PageLinksList:
