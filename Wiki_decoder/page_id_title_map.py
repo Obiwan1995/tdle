@@ -53,24 +53,20 @@ class PageIdTitleMap:
     def read_raw_file(file):
         start_time = current_milli_time()
         result = dict()
-        with open(file) as inp:
-            try:
-                last_print = current_milli_time() - PageIdTitleMap.PRINT_INTERVAL
-                i = 0
-                while True:
-                    line = inp.readline()
-                    if line is not None:
-                        break
-                    result[line] = int(inp.readline())
+        with open(file, 'r') as inp:
+            last_print = current_milli_time() - PageIdTitleMap.PRINT_INTERVAL
+            i = 0
+            for line in inp:
+                line = line.strip()
+                result[line] = int(inp.readline())
 
-                    if current_milli_time() - last_print >= PageIdTitleMap.PRINT_INTERVAL:
-                        print("Reading {}: {} million entries...".format(file, i / 1000000))
-                        last_print = current_milli_time()
+                if current_milli_time() - last_print >= PageIdTitleMap.PRINT_INTERVAL:
+                    print("Reading {}: {} million entries...".format(file, i / 1000000))
+                    last_print = current_milli_time()
+                i += 1
 
-                    print("Reading {}: {} million entries... Done ({} s)".format(file, len(result) / 1000000, (
-                        current_milli_time() - start_time) / 1000))
-            except Exception as e:
-                print(e)
+            print("Reading {}: {} million entries... Done ({} s)".format(file, len(result) / 1000000, (
+               current_milli_time() - start_time) / 1000))
         return result
 
     @staticmethod
