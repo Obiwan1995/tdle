@@ -1,5 +1,6 @@
 import time
 import struct
+import gzip
 from sql_reader import SqlReader
 
 
@@ -14,54 +15,55 @@ class PageLinksList:
         start_time = int(round(time.time() * 1000))
         raw_links = [1]
         raw_links_len = 0
-        inp = SqlReader(file, "pagelinks")
+        
+        with gzip.open(file, 'rt') as f:
+            inp = SqlReader(f, "pagelinks")
+            try:
+                last_print = PageLinksList.current_milli_time() - PageLinksList.PRINT_INTERVAL
+                while True:
+                    multiple_rows = inp.read_insertion_tuples()
 
-        try:
-            last_print = PageLinksList.current_milli_time() - PageLinksList.PRINT_INTERVAL
-            while True:
-                multiple_rows = inp.read_insertion_tuples()
+                    if multiple_rows is None:
+                        break
 
-                if multiple_rows is None:
-                    break
+                    for tup in multiple_rows:
+                        # Get tup fields
+                        if len(tup) != 4:
+                            raise Exception("Incorrect number of columns")
+                        src_id = tup[0]
+                        namespace = tup[1]
+                        dest_title = tup[2]
 
-                for tup in multiple_rows:
-                    # Get tup fields
-                    if len(tup) != 4:
-                        raise Exception("Incorrect number of columns")
-                    src_id = tup[0]
-                    namespace = tup[1]
-                    dest_title = tup[2]
+                        # Check data format
+                        if not isinstance(src_id, int):
+                            raise Exception("Source ID must be integer")
+                        if not isinstance(namespace, int):
+                            raise Exception("Namespace must be integer")
+                        if not isinstance(dest_title, str):
+                            raise Exception("Destination title must be string")
+                        if not (int(namespace) == 0 and (src_id in id_to_title) and (dest_title in title_to_id)):
+                            continue  # Skip if not in main namespace or either page entry not found
 
-                    # Check data format
-                    if not isinstance(src_id, int):
-                        raise Exception("Source ID must be integer")
-                    if not isinstance(namespace, int):
-                        raise Exception("Namespace must be integer")
-                    if not isinstance(dest_title, int):
-                        raise Exception("Destination title must be integer")
-                    if int(namespace) == 0 and (src_id in id_to_title) and (dest_title in title_to_id):
-                        continue  # Skip if not in main namespace or either page entry not found
+                        # Append to dynamic array
+                        # if raw_links_len == len(raw_links):
+                            # if raw_links_len >= int(PageLinksList.MAX_INT / 2):
+                                # raise Exception("Array size too large")
+                                # raw_links = Arrays.copyOf(raw_links, raw_links.length * 2) --> inutile de le traduire
+	
+                        #raw_links.append(title_to_id[dest_title] << 32 | int(src_id))
+                        raw_links_len += 1
 
-                    # Append to dynamic array
-                    if raw_links_len == len(raw_links):
-                        if raw_links_len >= int(PageLinksList.MAX_INT / 2):
-                            raise Exception("Array size too large")
-                            # raw_links = Arrays.copyOf(raw_links, raw_links.length * 2) --> inutile de le traduire
+                    if PageLinksList.current_milli_time() - last_print >= PageLinksList.PRINT_INTERVAL:
+                        print("\rParsing {}: {} million entries stored".format(file, raw_links_len / 1000000.0))
+                        last_print = PageLinksList.current_milli_time()
 
-                    raw_links[raw_links_len] = title_to_id[dest_title] << 32 | int(src_id)
-                    raw_links_len += 1
+            except Exception as e:
+                print(e)
 
-                if PageLinksList.current_milli_time() - last_print >= PageLinksList.PRINT_INTERVAL:
-                    print("\rParsing {}: {} million entries stored".format(file, raw_links_len / 1000000.0))
-                    last_print = PageLinksList.current_milli_time()
+            print("\rParsing {}: {} million entries stored. Done ({} s)".format(file, raw_links_len / 1000000.0, (
+            PageLinksList.current_milli_time() - start_time) / 1000.0))
 
-        except Exception as e:
-            print(e)
-
-        print("\rParsing {}: {} million entries stored. Done ({} s)".format(file, raw_links_len / 1000000.0, (
-        PageLinksList.current_milli_time() - start_time) / 1000.0))
-
-        return PageLinksList.post_process_links(raw_links, raw_links_len)
+            return PageLinksList.post_process_links(raw_links, raw_links_len)
 
     @staticmethod
     def post_process_links(raw_links, raw_links_len):
@@ -124,7 +126,7 @@ class PageLinksList:
     @staticmethod
     def write_raw_file(links, file):
         start_time = PageLinksList.current_milli_time()
-        out = open(file)
+        out = open(file, 'r')
         try:
             out.write(struct.pack("i", links.length))
             i = 0

@@ -15,6 +15,7 @@ class SqlReader:
         
             values_text = line[len(self.matchLinePrefix): len(line)-len(self.matchLineSuffix)]
             return self.parse_tuples(values_text)
+        return None
 
     @staticmethod
     def parse_tuples(text):

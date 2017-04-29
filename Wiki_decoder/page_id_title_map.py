@@ -59,11 +59,11 @@ class PageIdTitleMap:
             for line in inp:
                 line = line.strip()
                 result[line] = int(inp.readline())
+                i += 1
 
                 if current_milli_time() - last_print >= PageIdTitleMap.PRINT_INTERVAL:
                     print("Reading {}: {} million entries...".format(file, i / 1000000))
                     last_print = current_milli_time()
-                i += 1
 
             print("Reading {}: {} million entries... Done ({} s)".format(file, len(result) / 1000000, (
                current_milli_time() - start_time) / 1000))
@@ -81,11 +81,11 @@ class PageIdTitleMap:
                     out.write(str(id_by_title[title]) + "\n")
                     i += 1
 
-                if current_milli_time() - last_print >= PageIdTitleMap.PRINT_INTERVAL:
-                    print("Writing {}: {} million entries...".format(file, i / 1000000))
-                    last_print = current_milli_time()
+                    if current_milli_time() - last_print >= PageIdTitleMap.PRINT_INTERVAL:
+                        print("Writing {}: {} million entries...".format(file, i / 1000000))
+                        last_print = current_milli_time()
 
-                print("Reading {}: {} million entries... Done ({} s)".format(file, i / 1000000, (
+                print("Writing {}: {} million entries... Done ({} s)".format(file, i / 1000000, (
                     current_milli_time() - start_time) / 1000))
             except Exception as e:
                 print(e)
