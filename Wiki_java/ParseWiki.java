@@ -36,6 +36,7 @@ import java.io.Writer;
  */
 
 public final class ParseWiki {
+	private static final int PRINT_INTERVAL = 30;
 	
 	/*---- Input/output files configuration ----*/
 	
@@ -67,36 +68,54 @@ public final class ParseWiki {
 			PageLinksList.writeRawFile(links, PAGE_LINKS_RAW_FILE);
 		} else  // Read cache
 			links = PageLinksList.readRawFile(PAGE_LINKS_RAW_FILE);
-		System.out.println(" Done indexing.");
+
+		System.out.println("Done indexing.");
+
 		System.out.println("Start Writing");
 
-			Writer output = null;
+		long startTime = System.currentTimeMillis();
+		Writer output = null;
 
-			//on met try si jamais il y a une exception
-			try
+		//on met try si jamais il y a une exception
+		try
+		{
+			output = new BufferedWriter(new FileWriter("links.txt"));
+			int i = 0;
+			long lastPrint = System.currentTimeMillis() - PRINT_INTERVAL;
+
+			while (i < links.length)
 			{
-
-				output = new BufferedWriter(new FileWriter("test.txt"));
-
-				for (int i=0;i<200;)
+				int link = links[i];
+				int nbredeliens = links[i+1];
+				if (i != 0)
 				{
-					int link = links[i];
-					int nbredeliens =links[i+1];
-					output.write(" Title :"+ idToTitle.get(link)+"\n");
-					for (int j=0;j<nbredeliens;j++)
+					output.write("\n");
+				}
+				output.write("Title : "+ idToTitle.get(link)+"\n");
+				for (int j=0;j<nbredeliens;j++)
+				{
+					output.write(String.valueOf(links[i + 2 + j]));
+					if (j < nbredeliens-1)
 					{
-						output.write(links[i + 2 + j]+", ");
+						output.write(",");
 					}
-					i = i+2+nbredeliens;
+					if (System.currentTimeMillis() - lastPrint >= PRINT_INTERVAL)
+					{
+						System.out.printf("\rWriting %s: %.3f of %.3f million links...", "links.txt", i / 1000000.0, links.length / 1000000.0);
+						lastPrint = System.currentTimeMillis();
+					}
 				}
-				output.flush();
-				System.out.println("fichier créé");
+				i += 2 + nbredeliens;
 			}
-			catch(IOException ioe){
-				System.out.print("Erreur : ");
-				ioe.printStackTrace();
-				}
-				output.close();
+			System.out.printf("\rWriting %s: %.3f of %.3f million links... Done (%.3f s)%n", "links.txt", i / 1000000.0, links.length / 1000000.0, (System.currentTimeMillis() - startTime) / 1000.0);
+			output.flush();
+		}
+		catch(IOException ioe)
+		{
+			System.out.print("Erreur : ");
+			ioe.printStackTrace();
+		}
+		output.close();
 
 	}
 		
