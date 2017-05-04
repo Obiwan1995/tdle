@@ -91,7 +91,8 @@ public final class ParseWiki {
 				{
 					output.write("\n");
 				}
-				output.write("Title : "+ idToTitle.get(link)+"\n");
+				output.write("Title : " + idToTitle.get(link) + "\n");
+				output.write("Id : " + link + "\n");
 				for (int j=0;j<nbredeliens;j++)
 				{
 					output.write(String.valueOf(links[i + 2 + j]));
