@@ -96,7 +96,7 @@ public final class sortpagetitlesbypagerank {
 		PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(PAGE_TITLES_OUTPUT_FILE), "UTF-8"));
 		try {
 			for (Entry e : entries)
-				out.printf("%.3f\t%s\n", Math.log10(e.pagerank), e.title);
+				out.printf("%.3f\t%s\n", Math.log10(1+e.pagerank), e.title);
 		} finally {
 			out.close();
 		}
