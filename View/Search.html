@@ -26,7 +26,7 @@
 					</div>
 					<div class="form-group">
 						<button class="btn btn-lg buttonsearch" type="submit">Pouss'in your search</button>
-						<button class="btn btn-lg buttonsearch" type="button">I have Franck !</button>
+						<button class="btn btn-lg buttonsearch" type="button" id="chance">I have Franck !</button>
 					</div>
 				</form>
 			</div>
@@ -36,5 +36,58 @@
 
 
 </body>
+
+<script type="text/javascript">
+	$("#chance").click(function(){
+		var recherche = $("#answer").val();
+
+		if (recherche != undefined && recherche != null && recherche != "")
+		{
+			$.get({
+				url: "http://localhost:9200/tdle/article/_search",
+				dataType : 'json',
+				contentType: 'application/json',
+
+				data : { 
+					"q": recherche,
+					"pretty": true,
+					"size": 100
+				}
+			})
+			.fail(function(data) { 
+				console.log("Error"); 
+				console.log(data); 
+			})
+			.done(function(data) {
+				console.log("Success");
+				console.log(data);
+
+				var tableau = [];
+				data.hits.hits.forEach(function(element) {
+					console.log(element);
+					var elem = {
+						"title": element._source.title, 
+						"score": element._source.score*element._score
+					};
+					tableau.push(elem);
+
+				});
+
+				tableau.sort(function(a, b) {
+					if (a.score < b.score)
+						return 1;
+					if (a.score > b.score)
+						return -1;
+					return 0;
+				});
+
+				var result = tableau[0];
+				var url = result.title.replace(/ /g, "_");
+				document.location = "https://fr.wikipedia.org/wiki/"+url
+			});	
+		}
+
+	})
+</script>
 
 </html>
