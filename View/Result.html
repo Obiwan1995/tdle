@@ -58,76 +58,83 @@
 	</footer>
 
 </div>
+<div class="loading"></div>
 
 </body>
 
 <script type="text/javascript">
 
-	var recherche = decodeURIComponent(document.location.href.split("=")[1].replace(/\+/g, " ").trim());
-	$("#barre").val(recherche);
+	window.addEventListener('load', function() {
+		$(document).on({
+			ajaxStart: function() { $('.loading').show(); },
+			ajaxStop: function() { $('.loading').hide(); }
+		});
 
-	$("#search_content").empty();
+		var recherche = decodeURIComponent(document.location.href.split("=")[1].replace(/\+/g, " ").trim());
+		$("#barre").val(recherche);
 
-	if (recherche != undefined && recherche != null && recherche != "")
-	{
-		$.get({
-			url: "http://localhost:9200/tdle/article/_search",
-			dataType : 'json',
-			contentType: 'application/json',
+		$("#search_content").empty();
 
-			data : { 
-				"q": recherche,
-				"pretty": true,
-				"size": 100
-			}
-		})
-		.fail(function(data) { 
-			console.log("Error"); 
-			console.log(data); 
-		})
-		.done(function(data) {
-			console.log("Success");
-			console.log(data);
+		if (recherche != undefined && recherche != null && recherche != "")
+		{
+			$.get({
+				url: "http://localhost:9200/tdle/article/_search",
+				dataType : 'json',
+				contentType: 'application/json',
 
-			var tableau = [];
-			data.hits.hits.forEach(function(element) {
-				console.log(element);
-				var elem = {
-					"title": element._source.title, 
-					"score": element._source.score*element._score
-				};
-				tableau.push(elem);
+				data : { 
+					"q": recherche,
+					"pretty": true,
+					"size": 100
+				}
+			})
+			.fail(function(data) { 
+				console.log("Error"); 
+				console.log(data); 
+			})
+			.done(function(data) {
+				console.log("Success");
+				console.log(data);
 
-			});
+				var tableau = [];
+				data.hits.hits.forEach(function(element) {
+					var elem = {
+						"title": element._source.title, 
+						"score": element._source.score*element._score
+					};
+					tableau.push(elem);
 
-			tableau.sort(function(a, b) {
-				if (a.score < b.score)
-					return 1;
-				if (a.score > b.score)
-					return -1;
-				return 0;
-			});
+				});
 
-			var results = tableau.slice(0, 10);
+				tableau.sort(function(a, b) {
+					if (a.score < b.score)
+						return 1;
+					if (a.score > b.score)
+						return -1;
+					return 0;
+				});
+
+				var results = tableau.slice(0, 10);
 
 
-			results.forEach(function(element) {
-				var url = element.title.replace(/ /g, "_");
-				$("#search_content").append('\
-					<div class="row" style="margin-bottom:10px;">\
-						<div class="col-md-6">\
-							<h4 style="margin-bottom:5px;"><a href="https://fr.wikipedia.org/wiki/'+url+'">'+element.title + ' - Wikipédia '+'</a></h4>\
-							<p class="url">https://fr.wikipedia.org/wiki/'+url+'</p>\
-							<p>'+element.title+'</p>\
-						</div>\
-					</div>'
-				)
-			});
+				results.forEach(function(element) {
+					var url = element.title.replace(/ /g, "_");
+					$("#search_content").append('\
+						<div class="row" style="margin-bottom:10px;">\
+							<div class="col-md-6">\
+								<h4 style="margin-bottom:5px;"><a href="https://fr.wikipedia.org/wiki/'+url+'">'+element.title + ' - Wikipédia '+'</a></h4>\
+								<p class="url">https://fr.wikipedia.org/wiki/'+url+'</p>\
+								<p>'+element.title+'</p>\
+							</div>\
+						</div>'
+					)
+				});
 
-			document.querySelector('title').innerHTML = recherche + " - Recherche Wikoogle";
+				document.querySelector('title').innerHTML = recherche + " - Recherche Wikoogle";
 
-		});	
-	}
+			});	
+		}
+	});
 
 </script>
 

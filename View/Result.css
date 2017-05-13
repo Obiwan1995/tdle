@@ -5,6 +5,7 @@
  */
 
 body {
+	position:relative;
     /* Required padding for .navbar-fixed-top. Remove if using .navbar-static-top. Change if height of navigation changes. */
 }
 .navbar{
@@ -20,4 +21,20 @@ body {
 }
 footer {
     margin: 50px 0;
+}
+
+.loading
+{
+	display:none;
+	position: absolute;
+	z-index: 1000;
+	top: 0;
+	left: 0;
+	height: 100%;
+	width: 100%;
+	background: rgba(255, 255, 255, 0.8)
+				url("loading.gif")
+				50% 50%
+				fixed 
+				no-repeat;
 }
