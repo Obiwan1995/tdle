@@ -63,7 +63,7 @@
 
 <script type="text/javascript">
 
-	var recherche = document.location.href.split("=")[1].replace(/\+/g, " ").trim();
+	var recherche = decodeURIComponent(document.location.href.split("=")[1].replace(/\+/g, " ").trim());
 	$("#barre").val(recherche);
 
 	$("#search_content").empty();
