@@ -1,139 +1,241 @@
-/* 
- * Computing Wikipedia's internal PageRanks
- * 
- * Copyright (c) 2016 Project Nayuki
- * All rights reserved. Contact Nayuki for licensing.
- * https://www.nayuki.io/page/computing-wikipedias-internal-pageranks
- */
-
 import java.util.Arrays;
 
 
 /* 
- * Calculates PageRank, by encapsulating a list of links and a list of current PageRank values.
+ * Calculates the pagerank
  */
 final class Pagerank {
 	
 	/*---- Fields ----*/
+
+	//Store the score of the pagerank
+	private double[] scores;
 	
-	// The vector of current PageRank values, changing after each iteration. Length equals idLimit.
-	// Other classes can read this data, but should not modify it.
-	public double[] pageranks;
-	
-	
-	// List of page-to-page links in a packed run-length format:
-	// (target page ID, number of incoming links, source page IDs...), ... .
+	//List of page with links associated
+	// target page ID, number of incoming links, source page IDs.
 	private int[] links;
 	
 	// Maximum page ID value plus 1. This sets the length of various arrays.
 	private int idLimit;
 	
 	// Number of page IDs with incoming links or outgoing links (ignores disconnected nodes).
-	private int numActive;
+	private int totalActive;
 	
 	// Indicates whether each page ID is active or not. Length equals idLimit.
 	private boolean[] isActive;
 	
 	// The number of outgoing links each page ID has. Length equals idLimit.
-	private int[] numOutgoingLinks;
+	private int[] numOutGoingLinks;
+
+	// Indicates whether each page ID has incominglinks. Length equals idLimit.
+	private boolean[] hasIncomingLinks;
 	
 	// Temporary array, which is filled and discarded per iteration. Length equals idLimit.
-	private double[] newPageranks;
+	private double[] newScores;
+
+	// Applied damping at each iteration of the pagerank
+	private final double DAMPING = 0.85;
+
+	public double[] getScores()
+	{
+		return scores;
+	}
+
+	public void setScores(double[] scores)
+	{
+		this.scores = scores;
+	}
 	
+	// Find the highest page ID among all links
+	private int findHighId ()
+	{
+		int maxId = 0;
+		int i = 0;
+		while (i < this.links.length)
+		{
+			// dest is the target page id
+			int dest = this.links[i];
+			// Compare the current id to the max
+			maxId = Math.max(dest, maxId);
+			// numIncoming is the number of incoming links
+			int numIncoming = this.links[i + 1];
+			// For each incoming links from the target page id
+			// We check if it has an id over the maxId
+			for (int j = 0; j < numIncoming; j++)
+			{
+				//The source of an incoming link
+				int src = this.links[i + 2 + j];
+				maxId = Math.max(src, maxId);
+			}
+			// Next target page id
+			i += numIncoming + 2;
+		}
+		return maxId;
+	}
+
+	// Set if the target id has incoming links and set the number of outgoinglink of an id.
+	private void setIncAndNumber()
+	{
+		int i = 0;
+		while (i < this.links.length)
+		{
+			// dest is the target page id
+			int dest = this.links[i];
+			this.hasIncomingLinks[dest] = true;
+			// numIncoming is the number of incoming links
+			int numIncoming = this.links[i + 1];
+			// For each incoming links from the target page id
+			// We set up the number of outgoingLinks
+			for (int j = 0; j < numIncoming; j++)
+			{
+				// The source of an incoming link
+				int src = this.links[i + 2 + j];
+				this.numOutGoingLinks[src]++;
+			}
+			i += numIncoming + 2;
+		}
+	}
+
+	// Set if the id is active and sum the total of active page
+	private void setActiveAndNumber()
+	{
+		for (int i = 0; i < idLimit; i++)
+		{
+			if (this.numOutGoingLinks[i] > 0 || this.hasIncomingLinks[i])
+			{
+				this.isActive[i] = true;
+				this.totalActive++;
+			}
+		}
+	}
+
+	// Initialize the score of each page
+	private void initScore()
+	{
+
+		double initWeight = 1.0 / this.totalActive;
+
+		for (int i = 0; i < this.idLimit; i++)
+		{
+			if (this.isActive[i])
+			{
+				this.scores[i] = initWeight;
+			}
+		}
+	}
 	
 	/*---- Constructor ----*/
 	
 	// Constructs a PageRank calculator based on the given array of links
 	// in the compressed format returned by class PageLinksList.
-	public Pagerank(int[] links) {
+	public Pagerank(int[] links)
+	{
+		// Set the links
 		this.links = links;
 		
-		// Find highest page ID among all links
-		int maxId = 0;
-		for (int i = 0; i < links.length; ) {
-			int dest = links[i];
-			System.out.println(dest);
-			maxId = Math.max(dest, maxId);
-			int numIncoming = links[i + 1];
-			for (int j = 0; j < numIncoming; j++) {
-				int src = links[i + 2 + j];
-				maxId = Math.max(src, maxId);
-			}
-			i += numIncoming + 2;
-		}
-		idLimit = maxId + 1;
+		// Set the maximum size of array
+		this.idLimit = findHighId() + 1;
 		
 		// Compute metadata fields
-		boolean[] hasIncomingLinks = new boolean[idLimit];
-		numOutgoingLinks = new int[idLimit];
-		for (int i = 0; i < links.length; ) {
-			int dest = links[i];
-			hasIncomingLinks[dest] = true;
-			int numIncoming = links[i + 1];
-			for (int j = 0; j < numIncoming; j++) {
-				int src = links[i + 2 + j];
-				numOutgoingLinks[src]++;
-			}
-			i += numIncoming + 2;
-		}
-		isActive = new boolean[idLimit];
-		numActive = 0;
-		for (int i = 0; i < idLimit; i++) {
-			if (numOutgoingLinks[i] > 0 || hasIncomingLinks[i]) {
-				isActive[i] = true;
-				numActive++;
-			}
-		}
+		// Array of bool with each indice correspond to a pageID.
+		this.hasIncomingLinks = new boolean[idLimit];
+		// Array of int with each indice correspond to a pageID
+		this.numOutGoingLinks = new int[idLimit];
+
+		setIncAndNumber();
+
+		// Array of bool with each indice correspond to a pageID.
+		this.isActive = new boolean[idLimit];
+		// Set the total of page active
+		this.totalActive = 0;
+
+		setActiveAndNumber();
+
 		
 		// Initialize PageRanks uniformly for active pages
-		pageranks = new double[idLimit];
-		double initWeight = 1.0 / numActive;
-		for (int i = 0; i < idLimit; i++) {
-			if (isActive[i])
-				pageranks[i] = initWeight;
-		}
-		newPageranks = new double[idLimit];
+		this.scores = new double[idLimit];
+		initScore();
+
+		this.newScores = new double[idLimit];
 	}
 	
 	
 	/*---- Methods ----*/
-	
-	// Performs one iteration of the PageRank algorithm and updates the values in the array 'pageranks'.
-	public void iterateOnce(double damping) {
-		// Pre-divide by number of outgoing links
-		for (int i = 0; i < idLimit; i++) {
-			if (numOutgoingLinks[i] > 0)
-				pageranks[i] /= numOutgoingLinks[i];
-		}
-		
-		// Distribute PageRanks over links (main calculation)
-		Arrays.fill(newPageranks, 0);
-		for (int i = 0; i < links.length; ) {
-			int numIncoming = links[i + 1];
-			double sum = 0;
-			for (int j = 0; j < numIncoming; j++) {
-				int src = links[i + 2 + j];
-				sum += pageranks[src];
+
+	// Divide the score by the number of outgoing links
+	private void divideByOutGoing()
+	{
+
+		for (int i = 0; i < this.idLimit; i++)
+		{
+			if (this.numOutGoingLinks[i] > 0)
+			{
+				this.scores[i] /= this.numOutGoingLinks[i];
 			}
-			int dest = links[i];
-			newPageranks[dest] = sum;
-			i += numIncoming + 2;
-		}
-		
-		// Calculate global bias due to pages without outgoing links
-		double bias = 0;
-		for (int i = 0; i < idLimit; i++) {
-			if (isActive[i] && numOutgoingLinks[i] == 0)
-				bias += pageranks[i];
-		}
-		bias /= numActive;
-		
-		// Apply bias and damping to all active pages
-		double temp = bias * damping + (1 - damping) / numActive;  // Factor out some arithmetic
-		for (int i = 0; i < idLimit; i++) {
-			if (isActive[i])
-				pageranks[i] = newPageranks[i] * damping + temp;
 		}
 	}
-	
+	// Set new scores based on the sum of incoming links scores
+	private void setNewScore()
+	{
+		int i = 0;
+		while (i < this.links.length)
+		{
+			// dest is the target page id
+			int dest = this.links[i];
+			// numIncoming is the number of incoming links
+			int numIncoming = this.links[i + 1];
+			double sumPastScore = 0;
+			for (int j = 0; j < numIncoming; j++)
+			{
+				// The source of an incoming link
+				int src = this.links[i + 2 + j];
+				// Adding the past scores
+				sumPastScore += this.scores[src];
+			}
+			// new score became the sum of past scores
+			this.newScores[dest] = sumPastScore;
+			i += numIncoming + 2;
+		}
+	}
+
+	// Generate Bias to compensate non active page
+	private double generateBias()
+	{
+		double bias = 0;
+		for (int i = 0; i < this.idLimit; i++)
+		{
+			if (this.isActive[i] && this.numOutGoingLinks[i] == 0)
+			{
+				bias += this.scores[i];
+			}
+		}
+		bias /= this.totalActive;
+		return bias;
+	}
+
+	// Performs one iteration of the PageRank algorithm and updates the values in the array 'scores'.
+	public void calculScore()
+	{
+		// Pre-divide by number of outgoing links
+		divideByOutGoing();
+		
+		// Distribute PageRanks over links (main calculation)
+		Arrays.fill(this.newScores, 0);
+
+		setNewScore();
+		
+		// Calculate global bias due to pages without outgoing links
+		double bias = generateBias();
+		
+		// Apply bias and damping to all active pages
+		double temp = bias * this.DAMPING + (1 - this.DAMPING) / totalActive;
+
+		for (int i = 0; i < idLimit; i++)
+		{
+			if (isActive[i])
+			{
+				scores[i] = newScores[i] * this.DAMPING + temp;
+			}
+		}
+	}
 }

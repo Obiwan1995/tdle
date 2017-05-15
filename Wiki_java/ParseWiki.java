@@ -18,6 +18,7 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Map;
 import java.io.BufferedWriter;
@@ -54,61 +55,76 @@ public final class ParseWiki {
 	public static void main(String[] args) throws IOException {
 		// Read page-ID-title data
 		Map<String,Integer> titleToId;
-		if (!PAGE_ID_TITLE_RAW_FILE.isFile()) {  // Read SQL and write cache
+		if (!PAGE_ID_TITLE_RAW_FILE.isFile())
+		{  // Read SQL and write cache
 			titleToId = PageIdTitleMap.readSqlFile(PAGE_ID_TITLE_SQL_FILE);
 			PageIdTitleMap.writeRawFile(titleToId, PAGE_ID_TITLE_RAW_FILE);
-		} else  // Read cache
+		}
+		else  // Read cache
+		{
 			titleToId = PageIdTitleMap.readRawFile(PAGE_ID_TITLE_RAW_FILE);
+		}
 		Map<Integer,String> idToTitle = PageIdTitleMap.computeReverseMap(titleToId);
 		
 		// Read page-links data
 		int[] links;
-		if (!PAGE_LINKS_RAW_FILE.isFile()) {  // Read SQL and write cache
+		if (!PAGE_LINKS_RAW_FILE.isFile())
+		{  // Read SQL and write cache
 			links = PageLinksList.readSqlFile(PAGE_LINKS_SQL_FILE, titleToId, idToTitle);
 			PageLinksList.writeRawFile(links, PAGE_LINKS_RAW_FILE);
-		} else  // Read cache
+		}
+		else  // Read cache
+		{
 			links = PageLinksList.readRawFile(PAGE_LINKS_RAW_FILE);
+		}
 
 		System.out.println("Done indexing.");
 
-		System.out.println("Start Writing");
+		System.out.println("Computing PageRank...");
 
-		long startTime = System.currentTimeMillis();
+		Pagerank pagerank = new Pagerank(links);
+
+		long lastTimeMillis;
+
+		// We iterate 200 times (enough to converge)
+		for (int i = 0; i < 50; i++)
+		{
+			System.out.print("Iteration " + (i+1));
+			lastTimeMillis = System.currentTimeMillis();
+			pagerank.calculScore();
+
+			System.out.printf(" (%.3f s)%n", (System.currentTimeMillis() - lastTimeMillis) / 1000.0);
+		}
+
 		Writer output = null;
-
+		long startTime = System.currentTimeMillis();
 		//on met try si jamais il y a une exception
 		try
 		{
-			output = new BufferedWriter(new FileWriter("links.txt"));
-			int i = 0;
+			output = new BufferedWriter(new FileWriter("pagerank.txt"));
+
 			long lastPrint = System.currentTimeMillis() - PRINT_INTERVAL;
 
-			while (i < links.length)
+			double[] scores = pagerank.getScores();
+			int j = 0;
+			for (int i = 0; i < scores.length; i++)
 			{
-				int link = links[i];
-				int nbredeliens = links[i+1];
-				if (i != 0)
+				String title = idToTitle.get(i);
+				if (title != null)
 				{
-					output.write("\n");
+					DecimalFormat format = new DecimalFormat("0.000");
+					j++;
+					double score = (double) Math.round((1 + (10 / Math.abs(Math.log10(scores[i])))) * 1000) / 1000;
+					output.write(idToTitle.get(i) + " - " + format.format(score) + "\n");
 				}
-				output.write("Title : " + idToTitle.get(link) + "\n");
-				output.write("Id : " + link + "\n");
-				for (int j=0;j<nbredeliens;j++)
+
+				if (System.currentTimeMillis() - lastPrint >= PRINT_INTERVAL)
 				{
-					output.write(String.valueOf(links[i + 2 + j]));
-					if (j < nbredeliens-1)
-					{
-						output.write(",");
-					}
-					if (System.currentTimeMillis() - lastPrint >= PRINT_INTERVAL)
-					{
-						System.out.printf("\rWriting %s: %.3f of %.3f million links...", "links.txt", i / 1000000.0, links.length / 1000000.0);
-						lastPrint = System.currentTimeMillis();
-					}
+					System.out.printf("\rWriting %s: %.3f of %.3f million pages...", "pagerank.txt", j / 1000000.0, idToTitle.size() / 1000000.0);
+					lastPrint = System.currentTimeMillis();
 				}
-				i += 2 + nbredeliens;
 			}
-			System.out.printf("\rWriting %s: %.3f of %.3f million links... Done (%.3f s)%n", "links.txt", i / 1000000.0, links.length / 1000000.0, (System.currentTimeMillis() - startTime) / 1000.0);
+			System.out.printf("\rWriting %s: %.3f of %.3f million pages... Done (%.3f s)%n", "pagerank.txt", j / 1000000.0, idToTitle.size() / 1000000.0, (System.currentTimeMillis() - startTime) / 1000.0);
 			output.flush();
 		}
 		catch(IOException ioe)
@@ -116,7 +132,13 @@ public final class ParseWiki {
 			System.out.print("Erreur : ");
 			ioe.printStackTrace();
 		}
-		output.close();
+		finally
+		{
+			if (output != null)
+			{
+				output.close();
+			}
+		}
 
 	}
 		
