@@ -87,7 +87,7 @@ public final class ParseWiki {
 		long lastTimeMillis;
 
 		// We iterate 200 times (enough to converge)
-		for (int i = 0; i < 50; i++)
+		for (int i = 0; i < 200; i++)
 		{
 			System.out.print("Iteration " + (i+1));
 			lastTimeMillis = System.currentTimeMillis();
