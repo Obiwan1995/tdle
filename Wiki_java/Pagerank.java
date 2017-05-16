@@ -1,9 +1,8 @@
 import java.util.Arrays;
 
-
-
-final class Pagerank {
-	
+public class Pagerank
+{
+	// Maximum id of pages + 1
 	private int idLimit;
 	
 	// Number of page IDs with incoming links or outgoing links
@@ -24,7 +23,7 @@ final class Pagerank {
 	// Temporary array
 	private double[] newScores;
 
-	// Set if each page ID has incominglinks.
+	// A cell is set to true if the current page ID has incoming links
 	private boolean[] hasIncomingLinks;
 
 	private final double DAMPING = 0.85;
@@ -39,8 +38,8 @@ final class Pagerank {
 		this.scores = scores;
 	}
 	
-	// Wth all the links, find the highest page ID 
-	private int findHighId ()
+	// With all the links, find the highest page ID
+	private int findHighId()
 	{
 		int maxId = 0;
 		int i = 0;
@@ -67,7 +66,7 @@ final class Pagerank {
 		return maxId;
 	}
 
-	// Set wheter or not if the target id has incoming links and set the number of outgoinglink of an id.
+	// Set whether or not the target id has incoming links and set the number of outgoing links of an id.
 	private void setIncAndNumber()
 	{
 		int i = 0;
@@ -81,7 +80,7 @@ final class Pagerank {
 			int numIncoming = this.links[i + 1];
 
 			// For each incoming links from the target page id
-			// We set up the number of outgoingLinks
+			// We set up the number of outgoing links
 			for (int j = 0; j < numIncoming; j++)
 			{
 				// Incoming link
@@ -109,7 +108,7 @@ final class Pagerank {
 		}
 	}
 
-	// Set if the id is active and sum the total of active page
+	// Set if the id is active and sum the total of active pages
 	private void setActiveAndNumber()
 	{
 		for (int i = 0; i < idLimit; i++)
@@ -134,16 +133,16 @@ final class Pagerank {
 		this.idLimit = findHighId() + 1;
 		
 		// Compute metadata fields
-		// Array of bool with each indice correspond to a pageID.
+		// Array of bool where each index corresponds to a pageID.
 		this.hasIncomingLinks = new boolean[idLimit];
-		// Array of int with each indice correspond to a pageID
+		// Array of int where each index corresponds to a pageID
 		this.numOutGoingLinks = new int[idLimit];
 
 		setIncAndNumber();
 
-		// Array of bool with each indice correspond to a pageID.
+		// Array of bool where each index corresponds to a pageID.
 		this.isActive = new boolean[idLimit];
-		// Set the total of page active
+		// Set the total of active pages
 		this.totalActive = 0;
 
 		setActiveAndNumber();
@@ -189,7 +188,7 @@ final class Pagerank {
 				// Adding the past scores
 				sumPastScore += this.scores[src];
 			}
-			// new score became the sum of past scores
+			// new score becomes the sum of past scores
 			this.newScores[dest] = sumPastScore;
 			i += numIncoming + 2;
 		}
@@ -210,12 +209,11 @@ final class Pagerank {
 		return bias;
 	}
 
-	// Compute scores
-	public void calculScore()
+	// Compute scores (one iteration)
+	public void computeScores()
 	{
 		divideByOutGoing();
-		
-	
+
 		Arrays.fill(this.newScores, 0);
 
 		setNewScore();
