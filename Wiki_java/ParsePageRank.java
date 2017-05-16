@@ -13,26 +13,30 @@ import org.json.simple.JSONObject;
 
 public final class ParsePageRank
 {
-	private static final File PAGERANK_INPUT_FILE = new File("page-titles-sorted.txt");
+	private static final File PAGERANK_INPUT_FILE = new File("sorted-pagerank.txt");
 	private static final File PAGERANK_JSON_FILE = new File("pagerank.json");
 
 	private static final int PRINT_INTERVAL = 30;  // In milliseconds
 
-	public static void main (String[] args) throws IOException
+	public static void main (String[] args)
 	{
 		long startTime = System.currentTimeMillis();
-		BufferedReader in0 = new BufferedReader(new InputStreamReader(new FileInputStream(PAGERANK_INPUT_FILE), "UTF-8"));
-		FileWriter out = new FileWriter(PAGERANK_JSON_FILE);
+		BufferedReader in = null;
+		FileWriter out = null;
 		int nb = 0;
-		try {
+		try
+		{
+			in = new BufferedReader(new InputStreamReader(new FileInputStream(PAGERANK_INPUT_FILE), "UTF-8"));
+			out = new FileWriter(PAGERANK_JSON_FILE);
+
 			long lastPrint = System.currentTimeMillis() - PRINT_INTERVAL;
-			while (true) {
-				String line = in0.readLine();
-				if (line == null)
-					break;
+			String line = in.readLine();
+
+			while (line != null)
+			{
 				String[] split = line.split("\t");
-				double score = Double.parseDouble(split[0].replace(",","."));
-				String title = split[1].replace("_", " ");
+				String title = split[0].trim().replace("_", " ");
+				double score = Double.parseDouble(split[1].trim());
 				nb++;
 
 				JSONObject index = new JSONObject();
@@ -50,15 +54,36 @@ public final class ParsePageRank
 				out.write(obj.toJSONString());
 				out.write("\n");
 
-				if (System.currentTimeMillis() - lastPrint >= PRINT_INTERVAL) {
-					System.out.printf("\rWriting %s: %.3f million entries...", "pagerank.json", nb / 1000000.0);
+				if (System.currentTimeMillis() - lastPrint >= PRINT_INTERVAL)
+				{
+					System.out.printf("\rWriting %s: %.3f million entries...", PAGERANK_JSON_FILE.getName(), nb / 1000000.0);
 					lastPrint = System.currentTimeMillis();
 				}
+				line = in.readLine();
 			}
-			System.out.printf("\rWriting %s: %.3f million entries... Done (%.3f s)%n", "pagerank.json", nb / 1000000.0, (System.currentTimeMillis() - startTime) / 1000.0);
-		} finally {
-			in0.close();
-			out.close();
+			System.out.printf("\rWriting %s: %.3f million entries... Done (%.3f s)%n", PAGERANK_JSON_FILE.getName(), nb / 1000000.0, (System.currentTimeMillis() - startTime) / 1000.0);
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		}
+		finally
+		{
+			try
+			{
+				if (in != null)
+				{
+					in.close();
+				}
+				if (out != null)
+				{
+					out.close();
+				}
+			}
+			catch (IOException e)
+			{
+				e.printStackTrace();
+			}
 		}
 	}
 }
