@@ -10,7 +10,8 @@ This project should use elasticsearch, hadoop and map-reduce
 
 ### Elastic Search
 
-Download it here: https://www.elastic.co/downloads/elasticsearch   
+Download it here: https://www.elastic.co/downloads/elasticsearch    
+
 Then, use `ParsePageRank.java` to parse the pagerank file into JSON format, which is needed to insert data into ElasticSearch.
 
 To be able to insert everything at once, you need to increase the http request size in the `file config/elasticsearch.yml`:
