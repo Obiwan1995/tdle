@@ -14,6 +14,8 @@
  */
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
@@ -37,15 +39,16 @@ public final class ParseWiki
 	private static final int PAGERANK_ITERATIONS = 200; // 200 iterations is enough to converge
 	
 	/*---- Input/output files configuration ----*/
-	
+
+	private static final String BASE_DIR = System.getProperty("user.dir") + File.separator;
 	private static final File PAGE_ID_TITLE_SQL_FILE = new File("frwiki-latest-page.sql.gz");           // Original input file
 	private static final File PAGE_ID_TITLE_RAW_FILE = new File("wikipedia-page-id-title.raw");  // Cache after preprocessing
 	
 	private static final File PAGE_LINKS_SQL_FILE = new File("frwiki-latest-pagelinks.sql.gz");   // Original input file
 	private static final File PAGE_LINKS_RAW_FILE = new File("wikipedia-page-links.raw");  // Cache after preprocessing
 
-	private static final File PAGERANK_FILE = new File("pagerank.txt"); // File to store the computed pagerank
-	private static final File SORTED_PAGERANK_FILE = new File("sorted-pagerank.txt"); // File to store the sorted pagerank
+	private static final String PAGERANK_FILE = BASE_DIR + "pagerank.txt"; // File to store the computed pagerank
+	private static final String SORTED_PAGERANK_FILE = BASE_DIR + "sorted-pagerank.txt"; // File to store the sorted pagerank
 	
 	/*---- Main program ----*/
 	
@@ -80,7 +83,7 @@ public final class ParseWiki
 
 		ArrayList<Article> articles;
 
-		if (!PAGERANK_FILE.isFile())
+		if (!Files.exists(Paths.get(PAGERANK_FILE)))
 		{
 			Pagerank pagerank = computePagerank(links);
 			articles = writePagerankFile(pagerank, idToTitle);
@@ -137,7 +140,7 @@ public final class ParseWiki
 		//on met try si jamais il y a une exception
 		try
 		{
-			output = new BufferedWriter(new FileWriter(PAGERANK_FILE));
+			output = Files.newBufferedWriter(Paths.get(PAGERANK_FILE));
 
 			long lastPrint = System.currentTimeMillis() - PRINT_INTERVAL;
 
@@ -161,11 +164,11 @@ public final class ParseWiki
 
 				if (System.currentTimeMillis() - lastPrint >= PRINT_INTERVAL)
 				{
-					System.out.printf("\rWriting %s: %.3f of %.3f million pages...", PAGERANK_FILE.getName(), j / 1000000.0, idToTitle.size() / 1000000.0);
+					System.out.printf("\rWriting %s: %.3f of %.3f million pages...", Paths.get(PAGERANK_FILE).getFileName(), j / 1000000.0, idToTitle.size() / 1000000.0);
 					lastPrint = System.currentTimeMillis();
 				}
 			}
-			System.out.printf("\rWriting %s: %.3f of %.3f million pages... Done (%.3f s)%n", PAGERANK_FILE.getName(), j / 1000000.0, idToTitle.size() / 1000000.0, (System.currentTimeMillis() - startTime) / 1000.0);
+			System.out.printf("\rWriting %s: %.3f of %.3f million pages... Done (%.3f s)%n", Paths.get(PAGERANK_FILE).getFileName(), j / 1000000.0, idToTitle.size() / 1000000.0, (System.currentTimeMillis() - startTime) / 1000.0);
 			output.flush();
 		}
 		catch(IOException ioe)
@@ -216,11 +219,11 @@ public final class ParseWiki
 
 				if (System.currentTimeMillis() - lastPrint >= PRINT_INTERVAL)
 				{
-					System.out.printf("\rReading %s: %.3f of %.3f million pages...", PAGERANK_FILE.getName(), i / 1000000.0, length / 1000000.0);
+					System.out.printf("\rReading %s: %.3f of %.3f million pages...", Paths.get(PAGERANK_FILE).getFileName(), i / 1000000.0, length / 1000000.0);
 					lastPrint = System.currentTimeMillis();
 				}
 			}
-			System.out.printf("\rReading %s: %.3f of %.3f million pages... Done (%.3f s)%n", PAGERANK_FILE.getName(), i / 1000000.0, length / 1000000.0, (System.currentTimeMillis() - startTime) / 1000.0);
+			System.out.printf("\rReading %s: %.3f of %.3f million pages... Done (%.3f s)%n", Paths.get(PAGERANK_FILE).getFileName(), i / 1000000.0, length / 1000000.0, (System.currentTimeMillis() - startTime) / 1000.0);
 		}
 		catch (IOException e)
 		{
@@ -251,7 +254,7 @@ public final class ParseWiki
 		//on met try si jamais il y a une exception
 		try
 		{
-			output = new BufferedWriter(new FileWriter(SORTED_PAGERANK_FILE));
+			output = Files.newBufferedWriter(Paths.get(SORTED_PAGERANK_FILE));
 
 			long lastPrint = System.currentTimeMillis() - PRINT_INTERVAL;
 
@@ -268,11 +271,11 @@ public final class ParseWiki
 
 				if (System.currentTimeMillis() - lastPrint >= PRINT_INTERVAL)
 				{
-					System.out.printf("\rWriting %s: %.3f of %.3f million pages...", SORTED_PAGERANK_FILE.getName(), i / 1000000.0, articles.size() / 1000000.0);
+					System.out.printf("\rWriting %s: %.3f of %.3f million pages...", Paths.get(SORTED_PAGERANK_FILE).getFileName(), i / 1000000.0, articles.size() / 1000000.0);
 					lastPrint = System.currentTimeMillis();
 				}
 			}
-			System.out.printf("\rWriting %s: %.3f of %.3f million pages... Done (%.3f s)%n", SORTED_PAGERANK_FILE.getName(), i / 1000000.0, articles.size() / 1000000.0, (System.currentTimeMillis() - startTime) / 1000.0);
+			System.out.printf("\rWriting %s: %.3f of %.3f million pages... Done (%.3f s)%n", Paths.get(SORTED_PAGERANK_FILE).getFileName(), i / 1000000.0, articles.size() / 1000000.0, (System.currentTimeMillis() - startTime) / 1000.0);
 			output.flush();
 		}
 		catch(IOException ioe)
