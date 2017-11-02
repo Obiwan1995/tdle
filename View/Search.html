@@ -44,14 +44,14 @@
 		if (recherche != undefined && recherche != null && recherche != "")
 		{
 			$.get({
-				url: "http://localhost:9200/tdle/article/_search",
+				url: "http://localhost:9200/data/article/_search",
 				dataType : 'json',
 				contentType: 'application/json',
 
 				data : { 
 					"q": recherche,
 					"pretty": true,
-					"size": 100
+					"size": 500
 				}
 			})
 			.fail(function(data) { 
