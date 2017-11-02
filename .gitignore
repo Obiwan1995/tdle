@@ -64,4 +64,6 @@ fabric.properties
 # Custom
 *.gz
 *.raw
-*/.txt
+/*.txt
+*.json
+/*.iml
