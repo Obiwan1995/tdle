@@ -18,10 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 
 /* 
@@ -51,11 +48,11 @@ public final class ParseWiki
 	private static final String SORTED_PAGERANK_FILE = BASE_DIR + "sorted-pagerank.txt"; // File to store the sorted pagerank
 	
 	/*---- Main program ----*/
-	
+
 	public static void main(String[] args) throws IOException
 	{
 		// Read page-ID-title data
-		Map<String,Integer> titleToId;
+		HashMap<String,Integer> titleToId;
 		if (!PAGE_ID_TITLE_RAW_FILE.isFile()) // Read SQL and write cache
 		{
 			titleToId = PageIdTitleMap.readSqlFile(PAGE_ID_TITLE_SQL_FILE);
@@ -65,7 +62,7 @@ public final class ParseWiki
 		{
 			titleToId = PageIdTitleMap.readRawFile(PAGE_ID_TITLE_RAW_FILE);
 		}
-		Map<Integer,String> idToTitle = PageIdTitleMap.computeReverseMap(titleToId);
+		HashMap<Integer,String> idToTitle = PageIdTitleMap.computeReverseMap(titleToId);
 		
 		// Read page-links data
 		int[] links;
@@ -94,8 +91,7 @@ public final class ParseWiki
 		}
 
 		System.out.println("Sorting pagerank...");
-		articles.sort(new Comparator<Article>()
-		{
+		articles.sort(new Comparator<Article>() {
 			@Override
 			public int compare(Article a1, Article a2)
 			{
@@ -137,7 +133,7 @@ public final class ParseWiki
 
 		Writer output = null;
 		long startTime = System.currentTimeMillis();
-		//on met try si jamais il y a une exception
+
 		try
 		{
 			output = Files.newBufferedWriter(Paths.get(PAGERANK_FILE));
@@ -173,7 +169,7 @@ public final class ParseWiki
 		}
 		catch(IOException ioe)
 		{
-			System.out.print("Erreur : ");
+			System.out.print("Error: ");
 			ioe.printStackTrace();
 		}
 		finally
@@ -215,13 +211,13 @@ public final class ParseWiki
 				String title = split[0].trim();
 				double score = Double.parseDouble(split[1].trim());
 				res.add(new Article(title, score));
-				line = in.readLine();
 
 				if (System.currentTimeMillis() - lastPrint >= PRINT_INTERVAL)
 				{
 					System.out.printf("\rReading %s: %.3f of %.3f million pages...", Paths.get(PAGERANK_FILE).getFileName(), i / 1000000.0, length / 1000000.0);
 					lastPrint = System.currentTimeMillis();
 				}
+				line = in.readLine();
 			}
 			System.out.printf("\rReading %s: %.3f of %.3f million pages... Done (%.3f s)%n", Paths.get(PAGERANK_FILE).getFileName(), i / 1000000.0, length / 1000000.0, (System.currentTimeMillis() - startTime) / 1000.0);
 		}
@@ -251,7 +247,6 @@ public final class ParseWiki
 	{
 		Writer output = null;
 		long startTime = System.currentTimeMillis();
-		//on met try si jamais il y a une exception
 		try
 		{
 			output = Files.newBufferedWriter(Paths.get(SORTED_PAGERANK_FILE));
@@ -280,7 +275,7 @@ public final class ParseWiki
 		}
 		catch(IOException ioe)
 		{
-			System.out.print("Erreur : ");
+			System.out.print("Error: ");
 			ioe.printStackTrace();
 		}
 		finally
@@ -300,7 +295,7 @@ public final class ParseWiki
 	}
 
 
-	// Utility class to store a Wikipedia article with his title and his score after computing the pagerank
+	// Utility class to store a Wikipedia article with its title and its score after computing the pagerank
 	private static class Article
 	{
 		private String title;

@@ -1,11 +1,3 @@
-/* 
- * Computing Wikipedia's internal PageRanks
- * 
- * Copyright (c) 2016 Project Nayuki
- * All rights reserved. Contact Nayuki for licensing.
- * https://www.nayuki.io/page/computing-wikipedias-internal-pageranks
- */
-
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
@@ -15,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,116 +44,128 @@ CREATE TABLE `page` (
  * Provides static functions for working with page ID/title data.
  */
 final class PageIdTitleMap {
-	
-	// Reads the given gzipped SQL file and returns a mapping of page title to integer ID.
-	public static Map<String,Integer> readSqlFile(File file) throws IOException {
+	private static final int PRINT_INTERVAL = 30;  // In milliseconds
+
+	private PageIdTitleMap() {}  // Not instantiable
+
+	/**
+	 * Read a SQL file and returns a HashMap, which associates an article id to its title
+	 * @param file File to read
+	 * @return A HashMap, which associates an article id to its title
+	 * @throws IOException If a problem occurred when reading the file
+	 */
+	public static HashMap<String, Integer> readSqlFile(File file) throws IOException {
 		long startTime = System.currentTimeMillis();
-		Map<String,Integer> result = new HashMap<String,Integer>();
+		HashMap<String, Integer> titleToId = new HashMap<>();
 		
 		SqlReader in = new SqlReader(new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(file)), "UTF-8")), "page");
 		long lastPrint = System.currentTimeMillis() - PRINT_INTERVAL;
+		List<List<Object>> multipleRows = in.readInsertionTuples();
 		try {
-			while (true) {
-				List<List<Object>> multipleRows = in.readInsertionTuples();
-				if (multipleRows == null)
-					break;
-				
+			while (multipleRows != null) {
 				for (List<Object> tuple : multipleRows) {
-					if (tuple.size() != 15)
+					if (tuple.size() != 15) {
 						throw new IllegalArgumentException("Incorrect number of columns");
+					}
 					Object namespace = tuple.get(1);
 					Object id = tuple.get(0);
 					Object title = tuple.get(2);
-					
-					if (!(namespace instanceof Integer))
+
+					if (!(namespace instanceof Integer)) {
 						throw new IllegalArgumentException("Namespace must be integer");
-					if (!(id instanceof Integer))
+					}
+					if (!(id instanceof Integer)) {
 						throw new IllegalArgumentException("ID must be integer");
-					if (!(title instanceof String))
+					}
+					if (!(title instanceof String)) {
 						throw new IllegalArgumentException("Title must be string");
-					if (((Integer)namespace).intValue() != 0)  // Filter out pages not in the main namespace
-						continue;
-					if (result.containsKey(title))
-						throw new IllegalArgumentException("Duplicate page title");
-					result.put((String)title, (Integer)id);
+					}
+					if ((int)namespace == 0) { // Filter out pages not in the main namespace
+						if (titleToId.containsKey(title)) {
+							throw new IllegalArgumentException("Duplicate page title");
+						}
+						titleToId.put((String) title, (Integer) id);
+					}
 				}
-				
+
 				if (System.currentTimeMillis() - lastPrint >= PRINT_INTERVAL) {
-					System.out.printf("\rParsing %s: %.3f million entries stored...", file.getName(), result.size() / 1000000.0);
+					System.out.printf("\rParsing %s: %.3f million entries stored...", file.getName(), titleToId.size() / 1000000.0);
 					lastPrint = System.currentTimeMillis();
 				}
+
+				multipleRows = in.readInsertionTuples();
 			}
 		} finally {
 			in.close();
 		}
-		System.out.printf("\rParsing %s: %.3f million entries stored... Done (%.3f s)%n", file.getName(), result.size() / 1000000.0, (System.currentTimeMillis() - startTime) / 1000.0);
-		return result;
+		System.out.printf("\rParsing %s: %.3f million entries stored... Done (%.3f s)%n", file.getName(), titleToId.size() / 1000000.0, (System.currentTimeMillis() - startTime) / 1000.0);
+		return titleToId;
 	}
-	
-	
-	public static Map<String,Integer> readRawFile(File file) throws IOException {
+
+	/*
+		File structure:
+		title1
+		id1
+		title2
+		id2
+		...
+	 */
+	public static HashMap<String, Integer> readRawFile(File file) throws IOException {
 		long startTime = System.currentTimeMillis();
-		Map<String,Integer> result = new HashMap<String,Integer>();
+		HashMap<String, Integer> titleToId = new HashMap<>();
 		
 		BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
-		try {
-			long lastPrint = System.currentTimeMillis() - PRINT_INTERVAL;
-			for (int i = 0; ; i++) {
-				String line = in.readLine();
-				if (line == null)
-					break;
-				result.put(line, new Integer(in.readLine()));
-				
-				if (System.currentTimeMillis() - lastPrint >= PRINT_INTERVAL) {
-					System.out.printf("\rReading %s: %.3f million entries...", file.getName(), i / 1000000.0);
-					lastPrint = System.currentTimeMillis();
-				}
+		long lastPrint = System.currentTimeMillis() - PRINT_INTERVAL;
+		String line = in.readLine();
+		int i = 0;
+		while (line != null) {
+			/*	If title is on the first line,
+				Id is on the line after */
+			titleToId.put(line, new Integer(in.readLine()));
+
+			if (System.currentTimeMillis() - lastPrint >= PRINT_INTERVAL) {
+				System.out.printf("\rReading %s: %.3f million entries...", file.getName(), i / 1000000.0);
+				lastPrint = System.currentTimeMillis();
 			}
-			System.out.printf("\rReading %s: %.3f million entries... Done (%.3f s)%n", file.getName(), result.size() / 1000000.0, (System.currentTimeMillis() - startTime) / 1000.0);
-		} finally {
-			in.close();
+			line = in.readLine();
+			i++;
 		}
-		return result;
+		System.out.printf("\rReading %s: %.3f million entries... Done (%.3f s)%n", file.getName(), titleToId.size() / 1000000.0, (System.currentTimeMillis() - startTime) / 1000.0);
+		in.close();
+		return titleToId;
 	}
 	
 	
 	public static void writeRawFile(Map<String,Integer> idByTitle, File file) throws IOException {
 		long startTime = System.currentTimeMillis();
 		PrintWriter out = new PrintWriter(new OutputStreamWriter(new BufferedOutputStream(new FileOutputStream(file), 128 * 1024), "UTF-8"));
-		try {
-			int i = 0;
-			long lastPrint = System.currentTimeMillis() - PRINT_INTERVAL;
-			for (String title : idByTitle.keySet()) {
-				out.println(title);
-				out.println(idByTitle.get(title));
-				i++;
-				
-				if (System.currentTimeMillis() - lastPrint >= PRINT_INTERVAL) {
-					System.out.printf("\rWriting %s: %.3f million entries...", file.getName(), i / 1000000.0);
-					lastPrint = System.currentTimeMillis();
-				}
+		int i = 0;
+		long lastPrint = System.currentTimeMillis() - PRINT_INTERVAL;
+		for (String title : idByTitle.keySet()) {
+			out.println(title);
+			out.println(idByTitle.get(title));
+			i++;
+
+			if (System.currentTimeMillis() - lastPrint >= PRINT_INTERVAL) {
+				System.out.printf("\rWriting %s: %.3f million entries...", file.getName(), i / 1000000.0);
+				lastPrint = System.currentTimeMillis();
 			}
-			System.out.printf("\rWriting %s: %.3f million entries... Done (%.3f s)%n", file.getName(), i / 1000000.0, (System.currentTimeMillis() - startTime) / 1000.0);
-		} finally {
-			out.close();
 		}
+		System.out.printf("\rWriting %s: %.3f million entries... Done (%.3f s)%n", file.getName(), i / 1000000.0, (System.currentTimeMillis() - startTime) / 1000.0);
+		out.close();
 	}
-	
-	
-	public static <K,V> Map<V,K> computeReverseMap(Map<K,V> map) {
-		System.out.print("Creating reverse mapping...");
+
+	public static HashMap<Integer, String> computeReverseMap(HashMap<String, Integer> titleToId)
+	{
+		System.out.printf("\rComputing reverse map...");
 		long startTime = System.currentTimeMillis();
-		Map<V,K> result = new HashMap<V,K>();
-		for (K key : map.keySet())
-			result.put(map.get(key), key);
-		System.out.printf(" Done (%.3f s)%n", (System.currentTimeMillis() - startTime) / 1000.0);
-		return result;
+		HashMap<Integer, String> idToTitle = new HashMap<>();
+		for (Map.Entry<String, Integer> entry : titleToId.entrySet()) {
+			String key = entry.getKey();
+			Integer value = entry.getValue();
+			idToTitle.put(value, key);
+		}
+		System.out.printf("\rComputing reverse map... Done (%.3f s)%n", (System.currentTimeMillis() - startTime) / 1000.0);
+		return idToTitle;
 	}
-	
-	
-	private static final int PRINT_INTERVAL = 30;  // In milliseconds
-	
-	
-	private PageIdTitleMap() {}  // Not instantiable
-	
 }
