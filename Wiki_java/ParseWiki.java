@@ -1,18 +1,3 @@
-/* 
- *
- * Parse 
- * <lang>wiki-<date>-page.sql.gz
- * <lang>wiki-<date>-page-links.sql.gz
- * to produce simplified files with page ids and links
- * 
- * Extracted from the original code :
- *
- *
- * Copyright (c) 2016 Project Nayuki
- * All rights reserved. Contact Nayuki for licensing.
- * https://www.nayuki.io/page/computing-wikipedias-internal-pageranks
- */
-
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -24,10 +9,8 @@ import java.util.*;
 /* 
  * This program reads the .sql.gz files containing Wikipedia's page metadata and page links
  * (or reads the cache files), writes out cached versions of the parsed data (for faster processing
- * next time), iteratively computes the PageRank of every page, and writes out the raw PageRank vector.
- * 
- * Run the program on the command line with no arguments. You may need to modify the file names below.
- * The program prints a bunch of statistics and progress messages on standard output.
+ * next time), iteratively computes the PageRank of every page, and writes out the PageRank in a text file
+ *
  */
 
 public final class ParseWiki
