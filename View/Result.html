@@ -77,7 +77,7 @@
 
 		if (recherche != undefined && recherche != null && recherche != "")
 		{
-			$.get({
+			$.ajax({
 				url: "http://localhost:9200/data/article/_search",
 				dataType : 'json',
 				contentType: 'application/json',
@@ -116,55 +116,63 @@
 
 				var results = tableau.slice(0, 10);
 
+				var count = 0;
 
 				results.forEach(function(element) {
-				var description ="lo";
-					
-				$.ajax({
+					var description ="lo";
+						
+					$.ajax({
 
-				url: "http://localhost:55105/API/description/" + element.title,
-				
-				dataType : 'json',
-				contentType: 'application/json',
+						url: "http://localhost:55105/API/description/" + element.title,
+						
+						dataType : 'json',
+						contentType: 'application/json',
 
-				    // La fonction à apeller si la requête aboutie
-				    success: function (data) {
-				        // Je charge les données dans box
-				        var description = data;
-				        var url = element.title.replace(/ /g, "_");
-						$("#search_content").append('\
-							<div class="row" style="margin-bottom:10px;">\
-								<div class="col-md-6">\
-									<h4 style="margin-bottom:5px;"><a href="https://fr.wikipedia.org/wiki/'+url+'">'+element.title + ' - Wikipédia '+'</a></h4>\
-									<p class="url">https://fr.wikipedia.org/wiki/'+url+'</p>\
-									<p>'+description.description+'</p>\
-								</div>\
-							</div>'
-						)
-				    },
+						    // La fonction à apeller si la requête aboutie
+						    success: function (data) {
+						        // Je charge les données dans box
+								element.description = data.description; 
+								onResponse();
+						    },
 
-				    // La fonction à appeler si la requête n'a pas abouti
-				    error: function() {
-				    	var url = element.title.replace(/ /g, "_");
-						$("#search_content").append('\
-							<div class="row" style="margin-bottom:10px;">\
-								<div class="col-md-6">\
-									<h4 style="margin-bottom:5px;"><a href="https://fr.wikipedia.org/wiki/'+url+'">'+element.title + ' - Wikipédia '+'</a></h4>\
-									<p class="url">https://fr.wikipedia.org/wiki/'+url+'</p>\
-									<p>'+element.title+'</p>\
-								</div>\
-							</div>'
-						)
-				        // J'affiche un message d'erreur
-				        console.log("Désolé, aucun résultat trouvé.");
-				    }
+						    // La fonction à appeler si la requête n'a pas abouti
+						    error: function() {
+						    	element.description = element.title;
+						    	onResponse();
+						        // J'affiche un message d'erreur
+						        console.log("Désolé, aucun résultat trouvé.");
+						    }
 
-				})
+					});
 
 				});
 
-				document.querySelector('title').innerHTML = recherche + " - Recherche Wikoogle";
+				function onResponse()
+				{
+					count++;
+					if (count == results.length)
+					{
+						showResults();
+						count = 0;
+					}
+				}
 
+				function showResults()
+				{
+					results.forEach(function(element) {
+					var url = element.title.replace(/ /g, "_");
+					$("#search_content").append('\
+						<div class="row" style="margin-bottom:10px;">\
+							<div class="col-md-6">\
+								<h4 style="margin-bottom:5px;"><a href="https://fr.wikipedia.org/wiki/'+url+'">'+element.title + ' - Wikipédia '+'</a></h4>\
+								<p class="url">https://fr.wikipedia.org/wiki/'+url+'</p>\
+								<p>'+element.description+'</p>\
+							</div>\
+						</div>');
+					});
+				}
+
+				document.querySelector('title').innerHTML = recherche + " - Recherche Wikoogle";
 			});	
 		}
 	});
