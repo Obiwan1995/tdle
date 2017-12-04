@@ -24,5 +24,5 @@ You also need to increase the ElasticSearch heap size in the file `config/jvm.op
 ```
 
 Finally, type the following command in a shell:    
-```curl -s -XPOST localhost:9200/_bulk --data-binary "@pagerank.json"```  
+```curl -s -H "Content-Type: application/x-ndjson" -XPOST localhost:9200/_bulk --data-binary "@pagerank.json"```  
 It may take a while so be patient. At the end, a lot of prints will be displayed in the shell.

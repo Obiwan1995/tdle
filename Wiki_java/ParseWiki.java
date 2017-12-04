@@ -55,6 +55,7 @@ public final class ParseWiki {
             links = PageLinksList.readRawFile(PAGE_LINKS_RAW_FILE);
         }
 
+        System.out.println(links.length);
         System.out.println("Done indexing.");
 
         ArrayList<Article> articles;
